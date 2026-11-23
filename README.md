@@ -24,3 +24,4 @@ y luego `python app.py`; los demás entran con `http://TU_IP:5000`.
 - `database/schema_mysql.sql` y `database/schema.sql`: esquema completo (MySQL y SQLite).
 - `templates/`, `static/`: interfaz.
 - `tests/`: pruebas automáticas. `pruebas_mysql.sql`: pruebas de triggers y procedimientos.
+Repositorio del examen final: Base de Datos II, Ingeniería de Software I y Teleprocesos y Redes.
