@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Órdenes{% endblock %}
+{% block content %}
+<div class="titulo-pagina">
+  <h2>Órdenes</h2>
+  <span class="sub">{{ total }} resultado{{ '' if total == 1 else 's' }}{% if hay_filtros %} con los filtros aplicados{% endif %}</span>
+  <div class="acciones">
+    <a class="btn secundario" href="{{ url_for('buscar_exportar', **args) }}">Exportar resultados (CSV)</a>
+    <a class="btn" href="{{ url_for('recepcion') }}">+ Nueva recepción</a>
+  </div>
+</div>
+
+<form method="get" action="{{ url_for('buscar') }}" class="card filtros">
+  <label class="f-q">Buscar
+    <input type="search" name="q" value="{{ q }}" placeholder="Folio, cliente, teléfono, IMEI, modelo, falla…" autofocus>
+  </label>
+  <label>Estado
+    <select name="estado"><option value="">Todos</option>
+      {% for e in estados %}<option {{ 'selected' if e == estado }}>{{ e }}</option>{% endfor %}
+    </select>
+  </label>
+  {% if tecnicos %}
+  <label>Técnico
+    <select name="tecnico"><option value="">Todos</option><option value="sin" {{ 'selected' if tecnico == 'sin' }}>Sin asignar</option>
+      {% for t in tecnicos %}<option value="{{ t.id }}" {{ 'selected' if tecnico == t.id|string }}>{{ t.nombre }}</option>{% endfor %}
+    </select>
+  </label>
+  {% endif %}
+  <label>Presupuesto
+    <select name="presupuesto"><option value="">Todos</option>
+      {% for p in ['Pendiente', 'Aprobado', 'Rechazado'] %}<option {{ 'selected' if p == presupuesto }}>{{ p }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Ingreso desde <input type="date" name="desde" value="{{ desde }}"></label>
+  <label>Hasta <input type="date" name="hasta" value="{{ hasta }}"></label>
+  <div class="acciones f-botones">
+    <button type="submit">Buscar</button>
+    {% if hay_filtros %}<a class="btn secundario" href="{{ url_for('buscar') }}">Limpiar</a>{% endif %}
+  </div>
+</form>
+
+<section class="card tabla-wrap">
+  <table>
+    <thead><tr><th>Folio</th><th>Cliente</th><th>Equipo</th><th>Falla</th><th>Estado</th><th>Presupuesto</th><th>Técnico</th><th>Ingreso</th></tr></thead>
+    <tbody>
+      {% for o in filas %}
+      <tr>
+        <td><a href="{{ url_for('orden_detalle', folio=o.folio) }}"><strong>{{ o.folio }}</strong></a></td>
+        <td>{{ o.cliente }}<br><span class="sub">{{ o.telefono }}</span></td>
+        <td>{{ o.marca }} {{ o.modelo }}<br><span class="sub">IMEI {{ o.imei }}</span></td>
+        <td>{{ o.falla_reportada }}</td>
+        <td><span class="estado {{ o.estado|slug }}">{{ o.estado }}</span></td>
+        <td><span class="estado {{ o.presupuesto_estado|slug }}">{{ o.presupuesto_estado }}</span></td>
+        <td>{{ o.tecnico or '—' }}</td>
+        <td class="sub">{{ o.fecha_ingreso[:16] }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" class="vacio">No encontramos órdenes con esa búsqueda. Prueba con menos palabras o quita algún filtro.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% if paginas > 1 %}
+<div class="paginacion">
+  {% if pagina > 1 %}<a class="btn secundario" href="{{ url_for('buscar', pagina=pagina - 1, **args) }}">← Anterior</a>{% endif %}
+  <span class="sub">Página {{ pagina }} de {{ paginas }}</span>
+  {% if pagina < paginas %}<a class="btn secundario" href="{{ url_for('buscar', pagina=pagina + 1, **args) }}">Siguiente →</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

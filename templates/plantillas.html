@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Mensajes de WhatsApp{% endblock %}
+{% block content %}
+<div class="titulo-pagina"><h2>Mensajes de WhatsApp</h2></div>
+<div class="grid-2">
+  <form method="post" class="card form-grid">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h3>Mensaje por etapa</h3>
+    <p class="ayuda">Este texto se precarga al pulsar «WhatsApp». Usa las variables de la derecha; las que no apliquen quedan vacías.</p>
+    {% for e in estados %}
+    <label>{{ e }}
+      <textarea name="t_{{ e }}" rows="3" maxlength="600">{{ textos[e] }}</textarea>
+    </label>
+    <label class="en-linea"><input type="checkbox" name="r_{{ e }}"> Restablecer el texto original de «{{ e }}»</label>
+    {% endfor %}
+    <div><button type="submit">Guardar mensajes</button></div>
+  </form>
+  <div class="col">
+    <section class="card">
+      <h3>Variables disponibles</h3>
+      <table class="mini-tabla">
+        {% for v, d in variables %}<tr><td><code>{{ v }}</code></td><td>{{ d }}</td></tr>{% endfor %}
+      </table>
+    </section>
+  </div>
+</div>
+{% endblock %}

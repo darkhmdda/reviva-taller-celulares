@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Nueva recepción{% endblock %}
+{% block content %}
+<form method="post" autocomplete="off" enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="titulo-pagina"><h2>Recepción de equipo</h2></div>
+  <div class="grid-2">
+    <div class="col">
+      <section class="card form-grid">
+        <h3>Cliente</h3>
+        <div class="fila dos">
+          <label>Nombre <input name="nombre" required value="{{ datos.get('nombre','') }}"></label>
+          <label>Teléfono (WhatsApp) <input name="telefono" type="tel" inputmode="numeric" required value="{{ datos.get('telefono','') }}"></label>
+        </div>
+      </section>
+      <section class="card form-grid">
+        <h3>Equipo</h3>
+        <label>IMEI (14-16 dígitos) <input name="imei" inputmode="numeric" required maxlength="16" value="{{ datos.get('imei','') }}"></label>
+        <div class="fila">
+          <label>Marca <input name="marca" required value="{{ datos.get('marca','') }}"></label>
+          <label>Modelo <input name="modelo" required value="{{ datos.get('modelo','') }}"></label>
+          <label>Color <input name="color" value="{{ datos.get('color','') }}"></label>
+        </div>
+        <label>Falla reportada <textarea name="falla" rows="3" required>{{ datos.get('falla','') }}</textarea></label>
+      </section>
+    </div>
+    <div class="col">
+      <section class="card form-grid">
+        <h3>Estado físico al recibir</h3>
+        <div class="checks">
+          {% for campo, texto in checklist %}
+          <label class="check"><input type="checkbox" name="{{ campo }}" {{ 'checked' if datos.get(campo) }}> {{ texto }}</label>
+          {% endfor %}
+        </div>
+        <label>Observaciones <textarea name="observaciones" rows="2">{{ datos.get('observaciones','') }}</textarea></label>
+        <label>Fotos del equipo (opcional, hasta 8)
+          <input type="file" name="fotos" accept="image/*" multiple>
+        </label>
+        <p class="ayuda">Sirven de evidencia del estado en que llega: pantalla, tapa, golpes. En el celular puedes usar la cámara.</p>
+      </section>
+      <section class="card form-grid">
+        <h3>Desbloqueo</h3>
+        <p class="ayuda">Dibuja el patrón con el dedo o el mouse, o captura un PIN.</p>
+        <div class="patron-wrap">
+          <div id="patron-grid" class="patron-grid">
+            {% for n in range(1, 10) %}<span class="dot" data-n="{{ n }}"></span>{% endfor %}
+            <canvas id="patron-canvas"></canvas>
+          </div>
+          <div class="form-grid">
+            <div id="patron-texto" class="ayuda">Sin patrón</div>
+            <button type="button" id="patron-borrar" class="secundario">Borrar patrón</button>
+            <input type="hidden" name="patron" id="patron" value="{{ datos.get('patron','') }}">
+            <label>PIN <input name="pin" inputmode="numeric" maxlength="12" value="{{ datos.get('pin','') }}"></label>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+  <div class="barra-accion"><button type="submit">Registrar y generar ticket</button></div>
+</form>
+<script src="{{ url_for('static', filename='js/patron.js') }}"></script>
+{% endblock %}

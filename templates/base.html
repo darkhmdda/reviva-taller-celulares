@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Reviva: Taller de Celulares{% endblock %}</title>
+  <script>try { if (localStorage.getItem('tema') === 'claro') document.documentElement.dataset.tema = 'claro'; } catch (e) {}</script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-tablero" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="i-nueva" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></symbol>
+    <symbol id="i-ordenes" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+    <symbol id="i-inventario" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5 9-5M12 13v8"/></symbol>
+    <symbol id="i-garantias" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+    <symbol id="i-resenas" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></symbol>
+    <symbol id="i-admin" viewBox="0 0 24 24"><path d="M3 6h10M17 6h4M3 12h4M11 12h10M3 18h12M19 18h2"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></symbol>
+    <symbol id="i-cuenta" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></symbol>
+    <symbol id="i-salir" viewBox="0 0 24 24"><path d="M9 21H5V3h4M16 17l5-5-5-5M21 12H9"/></symbol>
+    <symbol id="i-sol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-luna" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></symbol>
+  </defs>
+</svg>
+{% macro ico(n) -%}<svg class="ico" aria-hidden="true"><use href="#i-{{ n }}"/></svg>{%- endmacro %}
+{% macro nav(url, texto, grupo, icono='') -%}
+  <a class="nav-btn{{ ' activo' if ruta_actual in grupo }}" href="{{ url }}">{% if icono %}{{ ico(icono) }}{% endif %}{{ texto }}</a>
+{%- endmacro %}
+{% set publica = ruta_actual in ('login', 'consulta', 'seguimiento') %}
+<header class="topbar">
+  <a class="brand" href="{{ url_for('kanban') if session.usuario_id else url_for('consulta') }}">📱 <span>Reviva <small class="brand-sub">Taller de Celulares</small></span></a>
+  {% if session.usuario_id and not publica %}
+  <nav class="menu">
+    {{ nav(url_for('kanban'), 'Tablero', ['kanban', 'orden_detalle', 'orden_creada'], 'tablero') }}
+    {{ nav(url_for('recepcion'), 'Nueva recepción', ['recepcion'], 'nueva') }}
+    {{ nav(url_for('buscar'), 'Órdenes', ['buscar'], 'ordenes') }}
+    {{ nav(url_for('inventario'), 'Inventario', ['inventario'], 'inventario') }}
+    {{ nav(url_for('garantias'), 'Garantías', ['garantias'], 'garantias') }}
+    {{ nav(url_for('resenas'), 'Reseñas', ['resenas'], 'resenas') }}
+    {% if session.rol == 'admin' %}
+    <details class="desplegable">
+      <summary class="nav-btn{{ ' activo' if ruta_actual in ['usuarios', 'finanzas', 'respaldo', 'plantillas'] }}">{{ ico('admin') }}Administración ▾</summary>
+      <div class="panel">
+        <a href="{{ url_for('finanzas') }}">Finanzas</a>
+        <a href="{{ url_for('plantillas') }}">Mensajes de WhatsApp</a>
+        <a href="{{ url_for('respaldo') }}">Respaldo y exportación</a>
+        <a href="{{ url_for('usuarios') }}">Usuarios</a>
+      </div>
+    </details>
+    <span class="admin-inline">
+      {{ nav(url_for('finanzas'), 'Finanzas', ['finanzas']) }}
+      {{ nav(url_for('plantillas'), 'Mensajes', ['plantillas']) }}
+      {{ nav(url_for('respaldo'), 'Respaldo', ['respaldo']) }}
+      {{ nav(url_for('usuarios'), 'Usuarios', ['usuarios']) }}
+    </span>
+    {% endif %}
+  </nav>
+  <form class="buscar-top" action="{{ url_for('buscar') }}" method="get" role="search">
+    <input type="search" name="q" value="{{ request.args.get('q', '') if ruta_actual == 'buscar' }}" placeholder="🔍 Buscar folio, cliente, IMEI…" aria-label="Buscar órdenes">
+  </form>
+  <div class="usuario">
+    <span class="chip-usuario">{{ session.nombre }}{% if session.rol != 'admin' %} · Técnico{% endif %}</span>
+    {{ nav(url_for('cuenta'), 'Mi cuenta', ['cuenta'], 'cuenta') }}
+    <a class="nav-btn salir" href="{{ url_for('logout') }}">{{ ico('salir') }}Salir</a>
+  </div>
+  {% endif %}
+  <button type="button" id="tema" class="nav-btn tema-btn" title="Cambiar entre modo oscuro y claro" aria-label="Cambiar tema">
+    <svg class="ico ico-luna" aria-hidden="true"><use href="#i-luna"/></svg><svg class="ico ico-sol" aria-hidden="true"><use href="#i-sol"/></svg>
+  </button>
+</header>
+<main class="page">
+  {% if session.usuario_id and not publica and ruta_actual != 'kanban' %}
+  <div class="barra-volver"><a class="btn volver" href="{{ volver_url }}">← Volver</a></div>
+  {% endif %}
+  {% if session.pass_default and not publica %}
+  <div class="flash alerta">⚠️ Sigues usando la contraseña inicial. <a href="{{ url_for('cuenta') }}">Cámbiala ahora</a> para proteger el sistema.</div>
+  {% endif %}
+  {% with mensajes = get_flashed_messages() %}
+    {% if mensajes %}<div class="flashes">{% for m in mensajes %}<div class="flash">{{ m }}</div>{% endfor %}</div>{% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+<script>
+  // Modo claro / oscuro (se recuerda en este navegador).
+  document.getElementById('tema').addEventListener('click', () => {
+    const claro = document.documentElement.dataset.tema !== 'claro';
+    if (claro) document.documentElement.dataset.tema = 'claro'; else delete document.documentElement.dataset.tema;
+    try { localStorage.setItem('tema', claro ? 'claro' : 'oscuro'); } catch (e) {}
+  });
+  // Cierra el menú de Administración al hacer clic fuera de él.
+  document.addEventListener('click', e => document.querySelectorAll('details.desplegable[open]')
+    .forEach(d => { if (!d.contains(e.target)) d.removeAttribute('open'); }));
+</script>
+</body>
+</html>

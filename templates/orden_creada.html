@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Orden {{ o.folio }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>✅ Orden registrada</h2>
+  <p class="folio">{{ o.folio }}</p>
+  <p>{{ o.cliente }} · {{ o.marca }} {{ o.modelo }}</p>
+  <p>
+    <a class="btn" href="{{ url_for('ticket_pdf', folio=o.folio) }}" target="_blank">Ver / imprimir ticket (PDF)</a>
+    <a class="btn secundario" href="{{ url_for('recepcion') }}">Nueva recepción</a>
+    <a class="btn secundario" href="{{ url_for('seguimiento', folio=o.folio) }}" target="_blank">Ver portal del cliente</a>
+  </p>
+</div>
+{% endblock %}

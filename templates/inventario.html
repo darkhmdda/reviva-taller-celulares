@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Inventario{% endblock %}
+{% block content %}
+{% set es_admin = session.rol == 'admin' %}
+<div class="titulo-pagina"><h2>Inventario de refacciones</h2></div>
+<div class="{{ 'split' if es_admin else '' }}">
+  <section class="card tabla-wrap">
+    <table>
+      <thead>
+        <tr><th>Categoría</th><th>Refacción</th><th>Compatible</th><th>Stock</th>
+          {% if es_admin %}<th>Costo prov.</th>{% endif %}<th>Precio venta</th>{% if es_admin %}<th></th>{% endif %}</tr>
+      </thead>
+      <tbody>
+        {% for r in items %}
+        <tr class="{{ 'alerta-fila' if r.stock < r.stock_minimo }}">
+          <td>{{ r.categoria }}</td>
+          <td>{{ r.nombre }}{% if r.stock < r.stock_minimo %} <span class="tag">{{ 'Reabastecer' if es_admin else 'Stock bajo' }}</span>{% endif %}</td>
+          <td>{{ r.marca_compatible or '' }} {{ r.modelo_compatible or '' }}</td>
+          {% if es_admin %}
+          <td><input form="f{{ r.id }}" name="stock" type="number" min="0" value="{{ r.stock }}"></td>
+          <td><input form="f{{ r.id }}" name="costo_proveedor" inputmode="decimal" value="{{ '%.2f'|format(r.costo_proveedor) }}"></td>
+          <td><input form="f{{ r.id }}" name="precio_venta" inputmode="decimal" value="{{ '%.2f'|format(r.precio_venta) }}"></td>
+          <td class="acciones">
+            <button form="f{{ r.id }}" class="mini">Guardar</button>
+            <button form="f{{ r.id }}" class="mini secundario" formaction="{{ url_for('refaccion_baja', rid=r.id) }}" onclick="return confirm('¿Dar de baja esta refacción?')">Baja</button>
+          </td>
+          {% else %}
+          <td>{{ r.stock }}</td>
+          <td>${{ '%.2f'|format(r.precio_venta) }}</td>
+          {% endif %}
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="vacio">Aún no hay refacciones registradas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if es_admin %}{% for r in items %}<form id="f{{ r.id }}" method="post" action="{{ url_for('refaccion_editar', rid=r.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"></form>{% endfor %}{% endif %}
+  </section>
+
+  {% if es_admin %}
+  <form method="post" action="{{ url_for('refaccion_nueva') }}" class="card form-grid">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h3>Agregar refacción</h3>
+    <label>Nombre <input name="nombre" required placeholder="Pantalla A15"></label>
+    <div class="fila dos">
+      <label>Categoría <select name="categoria">{% for c in categorias %}<option>{{ c }}</option>{% endfor %}</select></label>
+      <label>Stock inicial <input name="stock" type="number" min="0" value="0"></label>
+    </div>
+    <div class="fila dos">
+      <label>Marca compatible <input name="marca_compatible"></label>
+      <label>Modelo compatible <input name="modelo_compatible"></label>
+    </div>
+    <div class="fila">
+      <label>Stock mínimo <input name="stock_minimo" type="number" min="0" value="2"></label>
+      <label>Costo proveedor <input name="costo_proveedor" inputmode="decimal" value="0"></label>
+      <label>Precio de venta <input name="precio_venta" inputmode="decimal" value="0"></label>
+    </div>
+    <button type="submit">Agregar</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

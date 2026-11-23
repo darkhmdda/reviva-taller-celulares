@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Seguimiento {{ o.folio }}{% endblock %}
+{% block content %}
+<div class="portal">
+  <div class="col">
+    <section class="card">
+      <h2>Seguimiento de tu equipo</h2>
+      <p class="folio">{{ o.folio }}</p>
+      <p>{{ o.marca }} {{ o.modelo }}{% if completo %} · Hola, {{ o.cliente.split()[0] }}{% endif %}</p>
+      <ol class="pasos">
+        {% for e in estados %}
+        <li class="{{ 'actual' if e == o.estado }} {{ 'hecho' if estados.index(e) < estados.index(o.estado) }}">{{ e }}</li>
+        {% endfor %}
+      </ol>
+      <p class="sub">Ingresó el {{ o.fecha_ingreso[:10] }}</p>
+    </section>
+    {% if completo and garantia %}
+    <section class="card">
+      <h3>Garantía</h3>
+      {% if garantia.vigente %}
+      <p class="ok">✔ Vigente hasta el {{ garantia.vence.strftime('%d/%m/%Y') }} ({{ garantia.dias_restantes }} días restantes).</p>
+      {% else %}<p class="ayuda">Venció el {{ garantia.vence.strftime('%d/%m/%Y') }}.</p>{% endif %}
+    </section>
+    {% endif %}
+  </div>
+
+  <div class="col">
+  {% if not completo %}
+  <form method="post" action="{{ url_for('seguimiento_verificar', folio=o.folio) }}" class="card form-grid">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h3>Ver el presupuesto y autorizar la reparación</h3>
+    <p class="ayuda">Para proteger tus datos, escribe el <b>número de teléfono celular que diste al dejar tu equipo</b> (puedes poner el número completo o solo sus últimos 4 dígitos). También puedes escanear el QR de tu ticket.</p>
+    <label>Tu teléfono <input name="telefono" type="tel" inputmode="numeric" placeholder="Ej. 4421234567" required autocomplete="off"></label>
+    <button type="submit">Continuar</button>
+  </form>
+
+  {% else %}
+  {% if o.diagnostico %}
+  <section class="card"><h3>Diagnóstico</h3><p>{{ o.diagnostico }}</p></section>
+  {% endif %}
+
+  {% if total > 0 %}
+  <section class="card">
+    <h3>Presupuesto</h3>
+    <table class="desglose">
+      {% if o.costo_refaccion > 0 %}<tr><td>Refacción{% if refaccion %} ({{ refaccion }}){% endif %}</td><td>${{ '%.2f'|format(o.costo_refaccion) }}</td></tr>{% endif %}
+      <tr><td>Mano de obra</td><td>${{ '%.2f'|format(o.mano_obra) }}</td></tr>
+      <tr class="total"><td>Total</td><td>${{ '%.2f'|format(total) }}</td></tr>
+      {% if pagado > 0 %}<tr><td>Pagado</td><td>${{ '%.2f'|format(pagado) }}</td></tr>
+      {% if o.presupuesto_estado == 'Aprobado' %}<tr class="total"><td>Saldo por pagar</td><td>${{ '%.2f'|format(saldo) }}</td></tr>{% endif %}{% endif %}
+    </table>
+
+    {% if o.presupuesto_estado == 'Pendiente' and o.estado == 'En Diagnóstico' %}
+    <p class="ayuda">Autoriza la reparación para que podamos intervenir tu equipo.</p>
+    <div class="acciones">
+      <form method="post" action="{{ url_for('seguimiento_presupuesto', folio=o.folio, accion='aprobar') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="t" value="{{ token }}"><button>Autorizar reparación</button>
+      </form>
+      <form method="post" action="{{ url_for('seguimiento_presupuesto', folio=o.folio, accion='rechazar') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="t" value="{{ token }}"><button class="secundario">No autorizar</button>
+      </form>
+    </div>
+    {% elif o.presupuesto_estado == 'Aprobado' %}<p class="ok">✔ Autorizaste este presupuesto.</p>
+    {% elif o.presupuesto_estado == 'Rechazado' %}<p class="ayuda">No autorizaste este presupuesto.</p>
+    {% endif %}
+  </section>
+  {% else %}
+  <section class="card"><h3>Presupuesto</h3><p class="ayuda">Aún estamos revisando tu equipo. Te avisaremos en cuanto el presupuesto esté listo.</p></section>
+  {% endif %}
+
+  {% if o.estado == 'Entregado' %}
+  <section class="card">
+    <h3>Tu opinión</h3>
+    {% if resena %}
+    <p class="estrellas-fijas">{{ '★' * resena.calificacion }}<span>{{ '★' * (5 - resena.calificacion) }}</span></p>
+    {% if resena.comentario %}<p>{{ resena.comentario }}</p>{% endif %}
+    <p class="ayuda">¡Gracias por calificarnos!</p>
+    {% else %}
+    <form method="post" action="{{ url_for('seguimiento_resena', folio=o.folio) }}" class="form-grid">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="t" value="{{ token }}">
+      <div class="estrellas">
+        {% for n in [5, 4, 3, 2, 1] %}<input type="radio" id="e{{ n }}" name="calificacion" value="{{ n }}" required><label for="e{{ n }}" title="{{ n }} estrellas">★</label>{% endfor %}
+      </div>
+      <label>Comentarios (opcional) <textarea name="comentario" rows="3" maxlength="500"></textarea></label>
+      <button type="submit">Enviar calificación</button>
+    </form>
+    {% endif %}
+  </section>
+  {% endif %}
+  {% endif %}
+  </div>
+</div>
+{% endblock %}

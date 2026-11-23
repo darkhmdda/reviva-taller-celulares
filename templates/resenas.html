@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Reseñas{% endblock %}
+{% block content %}
+<div class="titulo-pagina"><h2>Reseñas de clientes</h2></div>
+<div class="split angosto-izq">
+  <section class="card">
+    {% if promedio %}
+    <p class="folio">{{ '%.1f'|format(promedio) }} <span class="estrellas-fijas">★</span></p>
+    <p class="sub">{{ filas|length }} reseñas</p>
+    {% for n, c in conteo.items() %}
+    <div class="barra-fila"><span>{{ n }} ★</span><div class="barra"><i style="width: {{ (c / filas|length * 100)|round|int }}%"></i></div><span>{{ c }}</span></div>
+    {% endfor %}
+    {% else %}<p class="vacio">Aún no hay reseñas.</p>{% endif %}
+  </section>
+  <div class="grid-2">
+    {% for r in filas %}
+    <section class="card">
+      <span class="estrellas-fijas">{{ '★' * r.calificacion }}<span>{{ '★' * (5 - r.calificacion) }}</span></span>
+      <p><strong>{{ r.cliente }}</strong> · {{ r.marca }} {{ r.modelo }}</p>
+      {% if r.comentario %}<p>{{ r.comentario }}</p>{% endif %}
+      <p class="sub"><a href="{{ url_for('orden_detalle', folio=r.folio) }}">{{ r.folio }}</a> · {{ r.fecha }}</p>
+    </section>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

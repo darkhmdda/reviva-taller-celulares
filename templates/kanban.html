@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Tablero{% endblock %}
+{% block content %}
+<div class="titulo-pagina">
+  <h2>Tablero de reparaciones</h2>
+  <input type="search" id="filtro-tablero" class="filtro-tablero" placeholder="Filtrar el tablero: cliente, folio, modelo…" aria-label="Filtrar el tablero">
+  <span class="sub">Entregadas: se muestran 7 días. <a href="{{ url_for('buscar', estado='Entregado') }}">Ver todas</a></span>
+  <div class="acciones"><a class="btn" href="{{ url_for('recepcion') }}">+ Nueva recepción</a></div>
+</div>
+{% if stock_bajo %}
+<div class="flash alerta">⚠️ {{ stock_bajo }} refacción(es) con stock bajo. <a href="{{ url_for('inventario') }}">Ver inventario</a></div>
+{% endif %}
+<div class="kanban">
+  {% for estado, ordenes in columnas.items() %}
+  <section class="columna {{ estado|slug }}">
+    <h3>{{ estado }} <span class="badge">{{ ordenes|length }}</span></h3>
+    <div class="tarjetas">
+      {% for o in ordenes %}
+      <article class="tarjeta" data-buscar="{{ o.folio }} {{ o.cliente }} {{ o.telefono }} {{ o.imei }} {{ o.marca }} {{ o.modelo }} {{ o.falla_reportada }} {{ o.tecnico or '' }}">
+        <div class="tarjeta-top">
+          <a href="{{ url_for('orden_detalle', folio=o.folio) }}"><strong>{{ o.folio }}</strong></a>
+          {% if o.presupuesto_estado != 'Pendiente' %}<span class="estado {{ o.presupuesto_estado|slug }}">{{ o.presupuesto_estado }}</span>{% endif %}
+        </div>
+        <div class="cliente">{{ o.cliente }}</div>
+        <div class="sub">{{ o.marca }} {{ o.modelo }} — {{ o.falla_reportada }}</div>
+        <div class="sub">👤 {{ o.tecnico or 'Sin asignar' }}</div>
+        {% if o.semaforo or o.estancada or o.saldo > 0 %}
+        <div class="marcas">
+          {% if o.semaforo %}<span class="semaforo {{ o.semaforo }}">{{ o.semaforo_texto }}</span>{% endif %}
+          {% if o.estancada %}<span class="semaforo estancada">Estancada</span>{% endif %}
+          {% if o.saldo > 0 %}<span class="semaforo saldo">Debe ${{ '%.0f'|format(o.saldo) }}</span>{% endif %}
+        </div>
+        {% endif %}
+        <div class="acciones">
+          <a class="btn wa mini" href="{{ o.wa }}" target="_blank" rel="noopener">WhatsApp</a>
+          {% if o.siguiente %}
+          <form method="post" action="{{ url_for('cambiar_estado_vista', folio=o.folio) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="estado" value="{{ o.siguiente }}">
+            <input type="hidden" name="volver" value="/">
+            <button class="mini">→ {{ o.siguiente }}</button>
+          </form>
+          {% endif %}
+        </div>
+      </article>
+      {% else %}
+      <p class="vacio">Sin órdenes</p>
+      {% endfor %}
+      {% if ordenes %}<p class="vacio sin-coincidencias" hidden>Sin coincidencias</p>{% endif %}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+<script>
+  // Filtro en vivo: oculta las tarjetas que no coinciden (sin acentos ni mayúsculas) y actualiza los contadores.
+  (function () {
+    const entrada = document.getElementById('filtro-tablero');
+    const tarjetas = [...document.querySelectorAll('.tarjeta')];
+    const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    entrada.addEventListener('input', () => {
+      const palabras = norm(entrada.value).split(/\s+/).filter(Boolean);
+      tarjetas.forEach(t => { const h = norm(t.dataset.buscar); t.hidden = !palabras.every(p => h.includes(p)); });
+      document.querySelectorAll('.columna').forEach(c => {
+        const n = c.querySelectorAll('.tarjeta:not([hidden])').length;
+        c.querySelector('.badge').textContent = n;
+        const aviso = c.querySelector('.sin-coincidencias');
+        if (aviso) aviso.hidden = n > 0 || !palabras.length;
+      });
+    });
+  })();
+</script>
+{% endblock %}

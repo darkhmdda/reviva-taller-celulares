@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Finanzas{% endblock %}
+{% block content %}
+{% set g = c.grafica %}
+<div class="titulo-pagina">
+  <h2>Cortes financieros</h2>
+  <span class="sub">Del {{ desde.strftime('%d/%m/%Y') }} al {{ hasta.strftime('%d/%m/%Y') }}</span>
+  <div class="acciones"><a class="btn secundario" href="{{ url_for('finanzas_exportar', desde=desde, hasta=hasta) }}">Exportar corte (CSV)</a></div>
+</div>
+
+<form method="get" class="card filtros-fecha">
+  <label>Desde <input type="date" name="desde" value="{{ desde }}"></label>
+  <label>Hasta <input type="date" name="hasta" value="{{ hasta }}"></label>
+  <button type="submit">Aplicar</button>
+  <div class="atajos">
+    {% for nombre, rango in atajos.items() %}<a class="btn secundario mini" href="{{ url_for('finanzas', desde=rango[0], hasta=rango[1]) }}">{{ nombre }}</a>{% endfor %}
+  </div>
+</form>
+
+<div class="kpis">
+  <div class="card kpi"><span class="sub">Ingresos</span><strong>{{ c.ingresos|dinero }}</strong><span class="sub">{{ c.n_entregadas }} orden{{ '' if c.n_entregadas == 1 else 'es' }} entregada{{ '' if c.n_entregadas == 1 else 's' }}</span></div>
+  <div class="card kpi"><span class="sub">Costo de refacciones</span><strong>{{ c.costos|dinero }}</strong><span class="sub">pagado a proveedores</span></div>
+  <div class="card kpi destacado"><span class="sub">Ganancia</span><strong>{{ c.ganancia|dinero }}</strong><span class="sub">margen {{ '%.1f'|format(c.margen) }}%</span></div>
+  <div class="card kpi"><span class="sub">Ticket promedio</span><strong>{{ c.ticket|dinero }}</strong><span class="sub">por reparación entregada</span></div>
+</div>
+<div class="kpis chicos">
+  <div class="card kpi"><span class="sub">Equipos recibidos</span><strong>{{ c.recibidas }}</strong></div>
+  <div class="card kpi"><span class="sub">Presupuestos rechazados</span><strong>{{ c.rechazadas }}</strong></div>
+  <div class="card kpi"><span class="sub">Por entregar (ya aprobado)</span><strong>{{ c.por_entregar_monto|dinero }}</strong><span class="sub">{{ c.por_entregar_n }} orden{{ '' if c.por_entregar_n == 1 else 'es' }}</span></div>
+  <div class="card kpi"><span class="sub">Calificación promedio</span><strong>{% if c.calificacion %}{{ '%.1f'|format(c.calificacion) }} <span class="estrellas-fijas">★</span>{% else %}—{% endif %}</strong><span class="sub">{{ c.n_resenas }} reseña{{ '' if c.n_resenas == 1 else 's' }}</span></div>
+</div>
+
+<section class="card">
+  <div class="titulo-pagina chico"><h3>Ingresos y ganancia por {{ g.paso }}</h3>
+    <span class="leyenda"><i class="sw ing"></i> Ingresos <i class="sw gan"></i> Ganancia</span></div>
+  {% if c.n_entregadas %}
+  <svg class="grafica" viewBox="0 0 {{ g.W }} {{ g.H }}" role="img" aria-label="Ingresos y ganancia por {{ g.paso }}">
+    {% for t in g.ticks %}
+    <line class="gl" x1="{{ g.ml }}" x2="{{ g.W - g.mr }}" y1="{{ t.y }}" y2="{{ t.y }}"/>
+    <text class="gt" x="{{ g.ml - 8 }}" y="{{ t.y + 4 }}" text-anchor="end">{{ t.texto }}</text>
+    {% endfor %}
+    {% for b in g.barras %}
+    <g>
+      <title>{{ b.titulo }}</title>
+      <rect class="bar-ing" x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}" rx="2"/>
+      <rect class="bar-gan" x="{{ b.xg }}" y="{{ b.yg }}" width="{{ b.w }}" height="{{ b.hg }}" rx="2"/>
+      {% if b.mostrar %}<text class="gt" x="{{ b.cx }}" y="{{ g.base + 18 }}" text-anchor="middle">{{ b.etiqueta }}</text>{% endif %}
+    </g>
+    {% endfor %}
+  </svg>
+  {% else %}<p class="vacio">Aún no hay órdenes entregadas con presupuesto aprobado en este periodo.</p>{% endif %}
+</section>
+
+<div class="grid-2 espaciado">
+  <section class="card tabla-wrap">
+    <table>
+      <thead><tr><th>Refacciones más usadas</th><th>Usos</th><th>Ingreso</th><th>Ganancia</th></tr></thead>
+      <tbody>
+        {% for r in c.refacciones %}<tr><td>{{ r.nombre }}</td><td>{{ r.usos }}</td><td>{{ r.ingreso|dinero }}</td><td>{{ (r.ingreso - r.costo)|dinero }}</td></tr>
+        {% else %}<tr><td colspan="4" class="vacio">Sin datos en este periodo.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </section>
+  <section class="card tabla-wrap">
+    <table>
+      <thead><tr><th>Técnicos</th><th>Entregas</th><th>Ingreso</th><th>Ganancia</th></tr></thead>
+      <tbody>
+        {% for t in c.tecnicos %}<tr><td>{{ t.nombre }}</td><td>{{ t.n }}</td><td>{{ t.ingreso|dinero }}</td><td>{{ t.ganancia|dinero }}</td></tr>
+        {% else %}<tr><td colspan="4" class="vacio">Sin datos en este periodo.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </section>
+  <section class="card tabla-wrap">
+    <table>
+      <thead><tr><th>Equipos más recibidos</th><th>Cantidad</th></tr></thead>
+      <tbody>
+        {% for e in c.equipos %}<tr><td>{{ e.nombre }}</td><td>{{ e.n }}</td></tr>
+        {% else %}<tr><td colspan="2" class="vacio">Sin datos en este periodo.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </section>
+  <section class="card tabla-wrap">
+    <table>
+      <thead><tr><th>Fallas más frecuentes</th><th>Cantidad</th></tr></thead>
+      <tbody>
+        {% for texto, n in c.fallas %}<tr><td>{{ texto }}</td><td>{{ n }}</td></tr>
+        {% else %}<tr><td colspan="2" class="vacio">Sin datos en este periodo.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<section class="card tabla-wrap">
+  <table>
+    <thead><tr><th>Folio</th><th>Entrega</th><th>Cliente</th><th>Equipo</th><th>Técnico</th><th>Ingreso</th><th>Costo</th><th>Ganancia</th></tr></thead>
+    <tbody>
+      {% for x in c.detalle %}
+      <tr>
+        <td><a href="{{ url_for('orden_detalle', folio=x.folio) }}">{{ x.folio }}</a></td>
+        <td class="sub">{{ x.fecha_entrega[:10] }}</td><td>{{ x.cliente }}</td><td>{{ x.marca }} {{ x.modelo }}</td>
+        <td>{{ x.tecnico or '—' }}</td><td>{{ x.ingreso|dinero }}</td><td>{{ x.costo|dinero }}</td><td>{{ x.ganancia|dinero }}</td>
+      </tr>
+      {% else %}<tr><td colspan="8" class="vacio">No hay entregas con presupuesto aprobado en este periodo.</td></tr>{% endfor %}
+    </tbody>
+    {% if c.detalle %}<tfoot><tr><th colspan="5">Total</th><th>{{ c.ingresos|dinero }}</th><th>{{ c.costos|dinero }}</th><th>{{ c.ganancia|dinero }}</th></tr></tfoot>{% endif %}
+  </table>
+</section>
+<p class="ayuda">Los ingresos se cuentan cuando la orden se entrega con el presupuesto aprobado (refacción + mano de obra). Las órdenes devueltas sin reparar no generan ingreso.</p>
+{% endblock %}

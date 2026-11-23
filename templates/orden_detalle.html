@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}{{ o.folio }}{% endblock %}
+{% block content %}
+{% set es_admin = session.rol == 'admin' %}
+<div class="titulo-pagina">
+  <h2>{{ o.folio }}</h2>
+  <span class="estado {{ o.estado|slug }}">{{ o.estado }}</span>
+  {% if semaforo %}<span class="semaforo {{ semaforo }}">{{ semaforo_texto }}</span>{% endif %}
+  {% if estancada %}<span class="semaforo estancada" title="Sin movimiento desde hace {{ 3 }} días o más">Estancada</span>{% endif %}
+  <div class="acciones">
+    <a class="btn wa" href="{{ wa }}" target="_blank" rel="noopener">Avisar por WhatsApp</a>
+    <a class="btn secundario" href="{{ url_for('ticket_pdf', folio=o.folio) }}" target="_blank">Ticket PDF</a>
+    <a class="btn secundario" href="{{ url_for('etiqueta_pdf', folio=o.folio) }}" target="_blank">Etiqueta</a>
+    <a class="btn secundario" href="{{ portal }}" target="_blank">Portal del cliente</a>
+    <a class="btn secundario" href="{{ url_for('garantias', imei=o.imei) }}">Historial del equipo</a>
+  </div>
+</div>
+
+<div class="grid-detalle">
+  <div class="col">
+    <section class="card">
+      <h3>Datos de la orden</h3>
+      <dl class="datos">
+        <div><dt>Cliente</dt><dd>{{ o.cliente }}</dd></div>
+        <div><dt>Teléfono</dt><dd>{{ o.telefono }}</dd></div>
+        <div><dt>Equipo</dt><dd>{{ o.marca }} {{ o.modelo }}</dd></div>
+        <div><dt>IMEI</dt><dd>{{ o.imei }}</dd></div>
+        <div class="ancho"><dt>Falla reportada</dt><dd>{{ o.falla_reportada }}</dd></div>
+        <div><dt>Estado físico</dt><dd>{{ marcados|join(', ') if marcados else 'Sin daños reportados' }}{% if o.observaciones_fisicas %}<br><span class="sub">{{ o.observaciones_fisicas }}</span>{% endif %}</dd></div>
+        <div><dt>Desbloqueo</dt><dd>
+          {% if o.patron_desbloqueo %}Patrón {{ o.patron_desbloqueo.replace('-', ' → ') }}{% endif %}
+          {% if o.pin_desbloqueo %} PIN {{ o.pin_desbloqueo }}{% endif %}
+          {% if not o.patron_desbloqueo and not o.pin_desbloqueo %}No proporcionado{% endif %}</dd></div>
+      </dl>
+      <form method="post" action="{{ url_for('fijar_promesa', folio=o.folio) }}" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="en-linea">Entrega prometida
+          <input type="date" name="fecha_promesa" value="{{ o.fecha_promesa or '' }}" {{ 'disabled' if o.estado == 'Entregado' }}></label>
+        {% if o.estado != 'Entregado' %}<button class="secundario">Guardar fecha</button>{% endif %}
+      </form>
+    </section>
+
+    {% if o.estado != 'Entregado' %}
+    <form method="post" action="{{ url_for('guardar_diagnostico', folio=o.folio) }}" class="card form-grid">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h3>Diagnóstico y presupuesto</h3>
+      <label>Diagnóstico técnico <textarea name="diagnostico" rows="3">{{ o.diagnostico or '' }}</textarea></label>
+      <fieldset {{ 'disabled' if not editable }}>
+        <legend>Presupuesto {% if not editable %}(bloqueado){% endif %}</legend>
+        <label>Refacción solicitada
+          <select name="refaccion_id" id="refaccion">
+            <option value="">Ninguna</option>
+            {% for r in refacciones %}
+            <option value="{{ r.id }}" data-precio="{{ r.precio_venta }}" {{ 'selected' if r.id == o.refaccion_id }}>
+              {{ r.categoria }} · {{ r.nombre }} (stock {{ r.stock }}{{ ' — AGOTADA' if r.stock == 0 }})
+            </option>
+            {% endfor %}
+          </select>
+        </label>
+        <div class="fila">
+          <label>Precio refacción al cliente <input name="costo_refaccion" id="costo_refaccion" inputmode="decimal" value="{{ '%.2f'|format(o.costo_refaccion) }}"></label>
+          <label>Mano de obra <input name="mano_obra" inputmode="decimal" value="{{ '%.2f'|format(o.mano_obra) }}"></label>
+          <label>Garantía (días) <input name="garantia_dias" inputmode="numeric" value="{{ o.garantia_dias }}"></label>
+        </div>
+      </fieldset>
+      <div class="barra-accion izq">
+        <button type="submit">Guardar</button>
+        <span>Total al cliente: <b>${{ '%.2f'|format(total) }}</b> · Presupuesto: <span class="estado {{ o.presupuesto_estado|slug }}">{{ o.presupuesto_estado }}</span></span>
+      </div>
+    </form>
+    {% endif %}
+    <section class="card" id="fotos">
+      <h3>Fotos del equipo <span class="sub">({{ fotos|length }}/{{ max_fotos }})</span></h3>
+      {% if fotos %}
+      <div class="galeria">
+        {% for f in fotos %}
+        <figure>
+          <a href="{{ url_for('ver_foto', fid=f.id) }}" target="_blank"><img src="{{ url_for('ver_foto', fid=f.id) }}" alt="Foto del equipo {{ loop.index }}" loading="lazy"></a>
+          {% if es_admin %}<form method="post" action="{{ url_for('eliminar_foto', fid=f.id) }}" onsubmit="return confirm('¿Eliminar esta foto?')">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="mini secundario">Quitar</button></form>{% endif %}
+        </figure>
+        {% endfor %}
+      </div>
+      {% else %}<p class="ayuda">Aún no hay fotos de esta orden.</p>{% endif %}
+      {% if fotos|length < max_fotos %}
+      <form method="post" action="{{ url_for('subir_fotos', folio=o.folio) }}" enctype="multipart/form-data" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="file" name="fotos" accept="image/*" multiple required>
+        <button class="secundario">Subir fotos</button>
+      </form>
+      {% endif %}
+    </section>
+
+    <section class="card" id="notas">
+      <h3>Notas internas <span class="sub">(el cliente no las ve)</span></h3>
+      <form method="post" action="{{ url_for('agregar_nota', folio=o.folio) }}" class="form-grid">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <textarea name="texto" rows="2" maxlength="1000" placeholder="Ej.: cliente pidió no abrir sin avisar; pieza viene en 2 días…" required></textarea>
+        <div><button class="secundario">Agregar nota</button></div>
+      </form>
+      <ul class="historial">
+        {% for n in notas %}<li><span>{{ n.texto }}</span><span class="sub">{{ n.fecha }} · {{ n.autor }}</span></li>
+        {% else %}<li class="vacio">Sin notas.</li>{% endfor %}
+      </ul>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card">
+      <h3>Estado y asignación</h3>
+      {% if destinos %}
+      <div class="acciones">
+        {% for d in destinos %}
+        <form method="post" action="{{ url_for('cambiar_estado_vista', folio=o.folio) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="estado" value="{{ d }}">
+          <input type="hidden" name="volver" value="{{ request.path }}">
+          <button>{% if o.estado == 'En Diagnóstico' and d == 'Listo' %}Devolver sin reparar (Listo){% else %}Mover a {{ d }}{% endif %}</button>
+        </form>
+        {% endfor %}
+      </div>
+      {% if saldo > 0 and 'Entregado' in destinos %}
+      <p class="ayuda">⚠️ Saldo pendiente de ${{ '%.2f'|format(saldo) }}: no se puede entregar hasta liquidarlo.</p>
+      {% if es_admin %}
+      <form method="post" action="{{ url_for('cambiar_estado_vista', folio=o.folio) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="estado" value="Entregado"><input type="hidden" name="forzar" value="1">
+        <input type="hidden" name="volver" value="{{ request.path }}">
+        <button class="secundario">Entregar con saldo pendiente (administrador)</button>
+      </form>
+      {% endif %}{% endif %}
+      {% else %}<p class="ayuda">Esta orden ya fue entregada.</p>{% endif %}
+
+      <p><b>Técnico:</b> {{ o.tecnico or 'Sin asignar' }}</p>
+      {% if es_admin %}
+      <form method="post" action="{{ url_for('asignar_tecnico', folio=o.folio) }}" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <select name="tecnico_id">
+          <option value="">Sin asignar</option>
+          {% for t in tecnicos %}<option value="{{ t.id }}" {{ 'selected' if t.id == o.tecnico_id }}>{{ t.nombre }}</option>{% endfor %}
+        </select>
+        <button class="secundario">Asignar</button>
+      </form>
+      {% elif not o.tecnico_id %}
+      <form method="post" action="{{ url_for('asignar_tecnico', folio=o.folio) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button>Tomar esta orden</button></form>
+      {% endif %}
+    </section>
+
+    <section class="card" id="pagos">
+      <h3>Pagos y anticipos</h3>
+      <dl class="datos">
+        <div><dt>Total</dt><dd>${{ '%.2f'|format(total) }}</dd></div>
+        <div><dt>Pagado</dt><dd>${{ '%.2f'|format(o.pagado) }}</dd></div>
+        <div><dt>Saldo</dt><dd><b class="{{ 'saldo-pend' if saldo > 0 else 'saldo-ok' }}">${{ '%.2f'|format(saldo) }}</b></dd></div>
+      </dl>
+      {% if pagos %}
+      <table class="mini-tabla">
+        {% for p in pagos %}<tr><td>{{ p.fecha[:16] }}</td><td>{{ p.tipo }} · {{ p.metodo }}</td><td class="num">${{ '%.2f'|format(p.monto) }}</td>
+          <td>{% if es_admin %}<form method="post" action="{{ url_for('eliminar_pago', folio=o.folio, pid=p.id) }}" onsubmit="return confirm('¿Eliminar este pago?')">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="mini secundario">Quitar</button></form>{% endif %}</td></tr>{% endfor %}
+      </table>
+      {% endif %}
+      <form method="post" action="{{ url_for('registrar_pago', folio=o.folio) }}" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="monto" inputmode="decimal" placeholder="Monto" required size="8">
+        <select name="tipo"><option>Anticipo</option><option>Abono</option><option>Pago final</option></select>
+        <select name="metodo"><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option></select>
+        <button>Registrar pago</button>
+      </form>
+      {% if pagos %}<div class="acciones"><a class="btn secundario mini" href="{{ url_for('recibo_pdf', folio=o.folio) }}" target="_blank">Recibo PDF</a></div>{% endif %}
+    </section>
+
+    {% if o.estado != 'Entregado' and o.presupuesto_estado == 'Pendiente' and o.estado == 'En Diagnóstico' and total > 0 %}
+    <section class="card">
+      <h3>Respuesta del cliente</h3>
+      <p class="ayuda">Envía el presupuesto por WhatsApp. Si el cliente responde en mostrador o por teléfono, regístralo aquí.</p>
+      <div class="acciones">
+        <form method="post" action="{{ url_for('presupuesto_accion', folio=o.folio, accion='aprobar') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button>El cliente aprobó</button></form>
+        <form method="post" action="{{ url_for('presupuesto_accion', folio=o.folio, accion='rechazar') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secundario">El cliente rechazó</button></form>
+      </div>
+    </section>
+    {% endif %}
+
+    {% if es_admin %}
+    <section class="card">
+      <h3>Finanzas (solo administrador)</h3>
+      <dl class="datos">
+        <div><dt>Costo de proveedor</dt><dd>${{ '%.2f'|format(o.costo_proveedor) }}</dd></div>
+        <div><dt>Ganancia estimada</dt><dd><b>${{ '%.2f'|format(margen) }}</b></dd></div>
+      </dl>
+    </section>
+    {% endif %}
+
+    <section class="card">
+      <h3>Bitácora de la orden</h3>
+      <ul class="historial">
+        {% for h in historial %}<li><span>{{ h.texto }}</span><span class="sub">{{ h.fecha }} · {{ h.quien }}</span></li>{% endfor %}
+      </ul>
+    </section>
+  </div>
+</div>
+<script>
+  const sel = document.getElementById('refaccion'), precio = document.getElementById('costo_refaccion');
+  if (sel && precio) sel.addEventListener('change', () => {
+    const p = sel.selectedOptions[0].dataset.precio;
+    precio.value = p ? Number(p).toFixed(2) : '0.00';
+  });
+</script>
+{% endblock %}

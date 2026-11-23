@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Respaldo y exportación{% endblock %}
+{% block content %}
+<div class="titulo-pagina"><h2>Respaldo y exportación</h2></div>
+<div class="grid-2">
+  <div class="col">
+    <section class="card form-grid">
+      <h3>Respaldo de la base de datos</h3>
+      {% if motor == 'mysql' %}
+      <p>La base de datos está en <b>MySQL (XAMPP)</b>. Para respaldarla abre <b>phpMyAdmin</b>, entra a la base <b>taller_celulares</b> y usa la pestaña <b>Exportar</b>. Para restaurar usa <b>Importar</b>.</p>
+      <div><a class="btn" href="http://localhost/phpmyadmin/" target="_blank" rel="noopener">Abrir phpMyAdmin</a></div>
+      {% else %}
+      <p>Descarga una copia completa de la base de datos ({{ kb }} KB). Guárdala en una memoria USB o en la nube: si el equipo se daña, con este archivo se recupera todo.</p>
+      <div><a class="btn" href="{{ url_for('respaldo_descargar') }}">Descargar respaldo ahora</a></div>
+      {% endif %}
+      <div><a class="btn secundario" href="{{ url_for('respaldo_fotos') }}">Descargar fotos de los equipos (ZIP)</a></div>
+      <p class="ayuda">Las fotos se guardan aparte, en la carpeta <b>database/fotos</b>. Para un respaldo completo copia también esa carpeta o descarga el ZIP.</p>
+      <p class="ayuda">⚠️ El respaldo incluye datos de clientes y los patrones o PIN de desbloqueo. Guárdalo en un lugar seguro.</p>
+    </section>
+
+    <section class="card form-grid">
+      <h3>Exportar a Excel (CSV)</h3>
+      <p class="ayuda">Los archivos se abren directo en Excel o Google Sheets, con acentos correctos.</p>
+      <div class="acciones">
+        {% set etiquetas = {'ordenes': 'Órdenes', 'clientes': 'Clientes', 'inventario': 'Inventario', 'resenas': 'Reseñas', 'bitacora': 'Bitácora'} %}
+        {% for nombre in conjuntos %}<a class="btn secundario" href="{{ url_for('respaldo_exportar', nombre=nombre ~ '.csv') }}">{{ etiquetas[nombre] }}</a>{% endfor %}
+        <a class="btn" href="{{ url_for('respaldo_exportar', nombre='todo.zip') }}">Todo (ZIP)</a>
+      </div>
+      <p class="ayuda">Las exportaciones no incluyen patrones ni PIN de desbloqueo.</p>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card tabla-wrap">
+      <table>
+        <thead><tr><th>Respaldos automáticos</th><th>Tamaño</th><th></th></tr></thead>
+        <tbody>
+          {% for a in archivos %}
+          <tr><td>{{ a.nombre }}</td><td class="sub">{{ a.kb }} KB</td><td><a class="btn secundario mini" href="{{ url_for('respaldo_archivo', nombre=a.nombre) }}">Descargar</a></td></tr>
+          {% else %}<tr><td colspan="3" class="vacio">Aún no hay respaldos automáticos. Se crea uno cada día al iniciar el sistema.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </section>
+    <section class="card">
+      <h3>Cómo restaurar un respaldo</h3>
+      <ol class="pasos-texto">
+        <li>Detén el sistema (Ctrl+C en la terminal).</li>
+        <li>Copia el archivo de respaldo a la carpeta <b>database</b> del proyecto con el nombre <b>taller.db</b> (reemplaza el actual; guarda antes una copia de ese).</li>
+        <li>Vuelve a iniciar con <b>python app.py</b>.</li>
+      </ol>
+      <p class="ayuda">Se conservan los últimos 14 respaldos automáticos.</p>
+    </section>
+  </div>
+</div>
+{% endblock %}

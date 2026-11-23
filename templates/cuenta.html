@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Mi cuenta{% endblock %}
+{% block content %}
+<form method="post" class="card login">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <h2>Cambiar contraseña</h2>
+  <label>Contraseña actual <input type="password" name="actual" required></label>
+  <label>Nueva contraseña (mínimo 8) <input type="password" name="nueva" minlength="8" required></label>
+  <label>Confirmar nueva contraseña <input type="password" name="confirmar" minlength="8" required></label>
+  <button type="submit">Guardar</button>
+</form>
+{% endblock %}

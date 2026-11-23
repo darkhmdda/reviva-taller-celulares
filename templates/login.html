@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Iniciar sesión{% endblock %}
+{% block content %}
+<form method="post" class="card login">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <h2>Iniciar sesión</h2>
+  <label>Correo <input type="email" name="email" required></label>
+  <label>Contraseña <input type="password" name="password" required></label>
+  <button type="submit">Entrar</button>
+  <p class="ayuda">¿Eres cliente? <a href="{{ url_for('consulta') }}">Consulta tu equipo con tu folio</a>.</p>
+</form>
+{% endblock %}

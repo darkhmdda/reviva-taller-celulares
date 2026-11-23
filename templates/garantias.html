@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Garantías{% endblock %}
+{% block content %}
+<div class="titulo-pagina">
+  <h2>Historial y garantías por IMEI</h2>
+  <form method="get" class="inline-form buscador">
+    <input name="imei" placeholder="IMEI del equipo" inputmode="numeric" value="{{ imei }}" required>
+    <button type="submit">Buscar</button>
+  </form>
+</div>
+
+{% if imei and not equipo %}<p class="vacio">No hay registros para ese IMEI.</p>{% endif %}
+{% if not imei %}<p class="ayuda">Escribe el IMEI para ver todas las reparaciones del equipo y si su garantía sigue vigente.</p>{% endif %}
+
+{% if equipo %}
+<div class="split angosto-izq">
+  <section class="card">
+    <h3>{{ equipo.marca }} {{ equipo.modelo }}</h3>
+    <dl class="datos">
+      <div class="ancho"><dt>IMEI</dt><dd>{{ equipo.imei }}</dd></div>
+      <div><dt>Cliente</dt><dd>{{ equipo.cliente }}</dd></div>
+      <div><dt>Teléfono</dt><dd>{{ equipo.telefono }}</dd></div>
+    </dl>
+    {% if vigentes %}
+    <div class="flash alerta">⚠️ Garantía vigente por {{ vigentes|map(attribute=0)|map(attribute='folio')|join(', ') }}. Revisa si la falla actual está cubierta.</div>
+    {% endif %}
+  </section>
+
+  <div class="grid-2">
+    {% for o, g in historial %}
+    <section class="card">
+      <div class="titulo-pagina chico">
+        <a href="{{ url_for('orden_detalle', folio=o.folio) }}"><strong>{{ o.folio }}</strong></a>
+        <span class="estado {{ o.estado|slug }}">{{ o.estado }}</span>
+      </div>
+      <p class="sub">Ingreso: {{ o.fecha_ingreso }}{% if o.fecha_entrega %} · Entrega: {{ o.fecha_entrega }}{% endif %}</p>
+      <p><b>Falla:</b> {{ o.falla_reportada }}{% if o.diagnostico %}<br><b>Diagnóstico:</b> {{ o.diagnostico }}{% endif %}</p>
+      {% if g %}
+        {% if g.vigente %}<p class="ok">✔ Garantía vigente hasta {{ g.vence.strftime('%d/%m/%Y') }} ({{ g.dias_restantes }} días)</p>
+        {% else %}<p class="ayuda">Garantía vencida el {{ g.vence.strftime('%d/%m/%Y') }}</p>{% endif %}
+      {% else %}<p class="ayuda">Sin garantía{% if o.estado != 'Entregado' %} (orden en proceso){% endif %}</p>{% endif %}
+    </section>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
