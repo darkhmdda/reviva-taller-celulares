@@ -1,0 +1,11 @@
+# Entorno virtual y caché de Python
+venv/
+__pycache__/
+*.pyc
+# Secretos y datos locales (no subir a GitHub)
+database/.secret_key
+database/*.db
+database/respaldos/
+uploads/
+# Exportación con datos reales (usuarios y contraseñas): subir solo el esquema
+database/reviva_export_phpmyadmin.sql
