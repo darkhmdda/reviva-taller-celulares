@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="static/img/imagotipo_520.png" alt="Logo de Reviva" width="260">
+</p>
 # Reviva: Taller de Celulares
 
 Sistema web para recepción, diagnóstico, seguimiento y entrega de reparaciones de celulares.
@@ -25,3 +28,9 @@ y luego `python app.py`; los demás entran con `http://TU_IP:5000`.
 - `templates/`, `static/`: interfaz.
 - `tests/`: pruebas automáticas. `pruebas_mysql.sql`: pruebas de triggers y procedimientos.
 Repositorio del examen final: Base de Datos II, Ingeniería de Software I y Teleprocesos y Redes.
+
+---
+
+<p align="center">
+  <img src="static/img/logotipo_reviva.png" alt="Reviva" width="220">
+</p>
