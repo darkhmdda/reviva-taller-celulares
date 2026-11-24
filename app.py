@@ -373,6 +373,17 @@ def url_seguimiento(folio):
     return f"{base.rstrip('/')}{url_for('seguimiento', folio=folio)}?t={token_folio(folio)}"
 
 
+LOGO_TICKET = os.path.join(BASE_DIR, "static", "img", "isotipo_ticket.png")
+
+
+def dibujar_logo(c, ancho, y, tam=40):
+    """Dibuja el isotipo de Reviva centrado en la parte superior del ticket o recibo."""
+    try:
+        c.drawImage(ImageReader(LOGO_TICKET), (ancho - tam) / 2, y - tam, tam, tam * 0.96, mask="auto")
+    except Exception:  # si falta el archivo, el comprobante se genera igual
+        pass
+
+
 @app.route("/ticket/<folio>/pdf")
 @login_required()
 def ticket_pdf(folio):
@@ -386,11 +397,13 @@ def ticket_pdf(folio):
     qr.make_image(fill_color="black", back_color="white").save(qr_buf, format="PNG")
     qr_buf.seek(0)
 
-    ancho, alto = 226, 470  # ~80 mm de ancho (impresora térmica)
+    ancho, alto = 226, 515  # ~80 mm de ancho (impresora térmica)
     margen = 12
     buf = io.BytesIO()
     c = pdf_canvas.Canvas(buf, pagesize=(ancho, alto))
-    y = alto - 20
+    y = alto - 14
+    dibujar_logo(c, ancho, y)
+    y -= 52
 
     def centrado(texto, fuente="Helvetica", tam=9):
         nonlocal y
@@ -962,10 +975,12 @@ def recibo_pdf(folio):
     verificar_acceso(o)
     pagos = get_db().execute("SELECT * FROM pagos WHERE orden_id = ? ORDER BY fecha, id", (o["id"],)).fetchall()
     ancho, margen = 226, 12
-    alto = 300 + 14 * len(pagos)
+    alto = 345 + 14 * len(pagos)
     buf = io.BytesIO()
     c = pdf_canvas.Canvas(buf, pagesize=(ancho, alto))
-    y = alto - 20
+    y = alto - 14
+    dibujar_logo(c, ancho, y)
+    y -= 52
 
     def centrado(texto, fuente="Helvetica", tam=9):
         nonlocal y

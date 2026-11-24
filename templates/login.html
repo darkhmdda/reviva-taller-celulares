@@ -3,6 +3,7 @@
 {% block content %}
 <form method="post" class="card login">
 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <img class="login-logo" src="{{ url_for('static', filename='img/imagotipo_520.png') }}" alt="Reviva: Taller de Reparación de Celulares" width="300" height="277">
   <h2>Iniciar sesión</h2>
   <label>Correo <input type="email" name="email" required></label>
   <label>Contraseña <input type="password" name="password" required></label>

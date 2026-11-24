@@ -2,6 +2,7 @@
 {% block title %}Consulta tu equipo{% endblock %}
 {% block content %}
 <form method="get" action="{{ url_for('consulta') }}" class="card login">
+  <img class="login-logo" src="{{ url_for('static', filename='img/imagotipo_520.png') }}" alt="Reviva: Taller de Reparación de Celulares" width="300" height="277">
   <h2>Consulta tu equipo</h2>
   <label>Número de folio <input name="folio" placeholder="TC-20261113-0001" required autofocus></label>
   <button type="submit">Consultar</button>

@@ -241,7 +241,7 @@ tfoot th { background: var(--bg-dark); color: var(--fg); font-size: .85rem; text
 }
 @media (max-width: 600px) { .kpi strong { font-size: 1.35rem; } }
 @media (max-width: 1350px) {
-  .brand span { display: none; }
+  .brand .brand-sub { display: none; }
   .nav-btn { padding: .36rem .55rem; font-size: .82rem; }
   .buscar-top { flex-basis: 170px; }
   .topbar { padding-left: 1rem; padding-right: 1rem; }
@@ -289,3 +289,17 @@ input[type="file"] { padding: .4rem; }
 
 /* Marca: Reviva con subtítulo */
 .brand .brand-sub { display: block; font-size: .62rem; font-weight: 500; color: var(--fg-2); letter-spacing: .04em; text-transform: uppercase; line-height: 1; margin-top: 2px; }
+
+/* ---- Logo de Reviva ---- */
+.brand { display: inline-flex; align-items: center; gap: .55rem; }
+.brand-logo { display: block; width: 38px; height: auto; flex: none; }
+.brand > span { display: block; line-height: 1.1; }
+.login-logo { display: block; width: min(300px, 78%); height: auto; margin: 0 auto .3rem; }
+:root[data-tema="claro"] .login-logo { background: #171B19; border-radius: 22px; padding: .7rem; box-sizing: content-box; }
+@media (max-width: 600px) {
+  .topbar .brand { justify-content: flex-start; }
+  .brand-logo { width: 34px; }
+  .login { margin: 1.2rem auto; }
+}
+@media (min-width: 601px) and (max-width: 1350px) { .brand .brand-sub { display: none; } }
+@media (max-width: 600px) { .buscar-top { flex-basis: auto; width: 100%; } }

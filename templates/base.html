@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Reviva: Taller de Celulares{% endblock %}</title>
   <script>try { if (localStorage.getItem('tema') === 'claro') document.documentElement.dataset.tema = 'claro'; } catch (e) {}</script>
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}" sizes="any">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+  <meta name="theme-color" content="#111512">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
@@ -29,7 +32,7 @@
 {%- endmacro %}
 {% set publica = ruta_actual in ('login', 'consulta', 'seguimiento') %}
 <header class="topbar">
-  <a class="brand" href="{{ url_for('kanban') if session.usuario_id else url_for('consulta') }}">📱 <span>Reviva <small class="brand-sub">Taller de Celulares</small></span></a>
+  <a class="brand" href="{{ url_for('kanban') if session.usuario_id else url_for('consulta') }}"><img class="brand-logo" src="{{ url_for('static', filename='img/isotipo_96.png') }}" srcset="{{ url_for('static', filename='img/isotipo_192.png') }} 2x" alt="" width="38" height="36"><span>Reviva <small class="brand-sub">Taller de Celulares</small></span></a>
   {% if session.usuario_id and not publica %}
   <nav class="menu">
     {{ nav(url_for('kanban'), 'Tablero', ['kanban', 'orden_detalle', 'orden_creada'], 'tablero') }}
