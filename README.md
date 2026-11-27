@@ -1,7 +1,7 @@
 <p align="center">
   <img src="static/img/imagotipo_520.png" alt="Logo de Reviva" width="260">
 </p>
-# Reviva: Taller de Celulares
+## Reviva: Taller de Celulares
 
 Sistema web para recepción, diagnóstico, seguimiento y entrega de reparaciones de celulares.
 Python + Flask, base de datos MySQL/MariaDB (XAMPP), con SQLite como alternativa.
